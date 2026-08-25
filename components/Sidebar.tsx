@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Sparkles, Home, Image, GitCompare, Orbit, Clock, BookOpen } from "lucide-react";
-
 const navigation = [
   { name: "Home", href: "/", icon: Home },
   { name: "Single Image Analysis", href: "/single", icon: Image },
@@ -14,7 +14,7 @@ const navigation = [
 
 export default function Sidebar() {
   // For demo purposes, highlight Home as active
-  const activeHref = "/";
+  const activeHref = usePathname();
   return (
     <nav className="relative flex flex-col w-64 bg-[#F4F9FF] border-r border-slate-200/80 p-4 rounded-2xl shadow-sm h-screen overflow-y-auto">
       {/* Cloud decorations */}
