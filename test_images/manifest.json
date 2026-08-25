@@ -1,0 +1,117 @@
+[
+  {
+    "id": "S2B_MSIL2A_20200815T103031_S01_WaterBody",
+    "class_label": "Water Bodies / Lakes & Rivers",
+    "description": "Satellite patch covering inland open water body with surrounding wetland vegetation.",
+    "npy_path": "patch_water_body.npy",
+    "png_path": "patch_water_body.png",
+    "dimensions": "128x128",
+    "channels": 12,
+    "bands": [
+      "B01",
+      "B02",
+      "B03",
+      "B04",
+      "B05",
+      "B06",
+      "B07",
+      "B08",
+      "B8A",
+      "B09",
+      "B11",
+      "B12"
+    ]
+  },
+  {
+    "id": "S2A_MSIL2A_20200722T104021_S02_ForestVegetation",
+    "class_label": "Broad-leaved & Coniferous Forest",
+    "description": "Dense canopy forest region with high Normalized Difference Vegetation Index (NDVI).",
+    "npy_path": "patch_forest_vegetation.npy",
+    "png_path": "patch_forest_vegetation.png",
+    "dimensions": "128x128",
+    "channels": 12,
+    "bands": [
+      "B01",
+      "B02",
+      "B03",
+      "B04",
+      "B05",
+      "B06",
+      "B07",
+      "B08",
+      "B8A",
+      "B09",
+      "B11",
+      "B12"
+    ]
+  },
+  {
+    "id": "S2B_MSIL2A_20200610T102019_S03_UrbanBuiltup",
+    "class_label": "Continuous & Discontinuous Urban Fabric",
+    "description": "High-density suburban built-up settlement with road network grid and concrete rooftops.",
+    "npy_path": "patch_urban_builtup.npy",
+    "png_path": "patch_urban_builtup.png",
+    "dimensions": "128x128",
+    "channels": 12,
+    "bands": [
+      "B01",
+      "B02",
+      "B03",
+      "B04",
+      "B05",
+      "B06",
+      "B07",
+      "B08",
+      "B8A",
+      "B09",
+      "B11",
+      "B12"
+    ]
+  },
+  {
+    "id": "S2A_MSIL2A_20200905T105011_S04_Agriculture",
+    "class_label": "Arable Land & Arable Crop Fields",
+    "description": "Regular geometric agricultural crop fields with seasonal soil and crop patterns.",
+    "npy_path": "patch_agriculture.npy",
+    "png_path": "patch_agriculture.png",
+    "dimensions": "128x128",
+    "channels": 12,
+    "bands": [
+      "B01",
+      "B02",
+      "B03",
+      "B04",
+      "B05",
+      "B06",
+      "B07",
+      "B08",
+      "B8A",
+      "B09",
+      "B11",
+      "B12"
+    ]
+  },
+  {
+    "id": "S2B_MSIL2A_20200518T101031_S05_IndustrialZone",
+    "class_label": "Industrial / Commercial / Transport Units",
+    "description": "Commercial warehouse complex with asphalt parking lots and metallized roofing structures.",
+    "npy_path": "patch_industrial.npy",
+    "png_path": "patch_industrial.png",
+    "dimensions": "128x128",
+    "channels": 12,
+    "bands": [
+      "B01",
+      "B02",
+      "B03",
+      "B04",
+      "B05",
+      "B06",
+      "B07",
+      "B08",
+      "B8A",
+      "B09",
+      "B11",
+      "B12"
+    ]
+  }
+]

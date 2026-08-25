@@ -1,0 +1,52 @@
+[
+  {
+    "id": "dense_forest",
+    "name": "Broad-Leaved Dense Forest",
+    "clc_code": "311",
+    "query": "What is the vegetation canopy density and land cover category?",
+    "category": "Single Image Analysis",
+    "png_url": "/samples/S2B_MSIL2A_20180524T101021_64_75_Dense_Forest.png",
+    "npy_url": "/samples/S2B_MSIL2A_20180524T101021_64_75_Dense_Forest.npy",
+    "filename": "S2B_MSIL2A_20180524T101021_64_75_Dense_Forest.png"
+  },
+  {
+    "id": "water_bodies",
+    "name": "Inland Water Bodies & Channels",
+    "clc_code": "512",
+    "query": "Is there a water body present in this satellite scene?",
+    "category": "Single Image Analysis",
+    "png_url": "/samples/S2B_MSIL2A_20180524T101021_32_18_Water_Bodies.png",
+    "npy_url": "/samples/S2B_MSIL2A_20180524T101021_32_18_Water_Bodies.npy",
+    "filename": "S2B_MSIL2A_20180524T101021_32_18_Water_Bodies.png"
+  },
+  {
+    "id": "urban_fabric",
+    "name": "Continuous & Discontinuous Urban Fabric",
+    "clc_code": "112",
+    "query": "Highlight the urban rooftop structures and road grid in this patch",
+    "category": "Grounding / VQA",
+    "png_url": "/samples/S2B_MSIL2A_20180524T101021_12_44_Urban_Fabric.png",
+    "npy_url": "/samples/S2B_MSIL2A_20180524T101021_12_44_Urban_Fabric.npy",
+    "filename": "S2B_MSIL2A_20180524T101021_12_44_Urban_Fabric.png"
+  },
+  {
+    "id": "arable_land",
+    "name": "Non-Irrigated Arable Crop Land",
+    "clc_code": "211",
+    "query": "Describe the agricultural land use and field patterns",
+    "category": "Captioning / VQA",
+    "png_url": "/samples/S2B_MSIL2A_20180524T101021_88_02_Arable_Land.png",
+    "npy_url": "/samples/S2B_MSIL2A_20180524T101021_88_02_Arable_Land.npy",
+    "filename": "S2B_MSIL2A_20180524T101021_88_02_Arable_Land.png"
+  },
+  {
+    "id": "deforested_land",
+    "name": "Bi-Temporal Forest Loss (2020 vs 2024)",
+    "clc_code": "324",
+    "query": "Compare these two satellite images for bi-temporal land-use changes",
+    "category": "Change Detection",
+    "png_url": "/samples/S2B_MSIL2A_BiTemporal_Forest_Loss.png",
+    "npy_url": "/samples/S2B_MSIL2A_BiTemporal_Forest_Loss.npy",
+    "filename": "S2B_MSIL2A_BiTemporal_Forest_Loss.png"
+  }
+]

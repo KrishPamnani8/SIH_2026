@@ -141,34 +141,54 @@ export default function HistoryPage() {
 
   const handleDelete = (id: number) => {
     if (confirm("Delete this history record?")) {
-      setRecords((prev) => prev.filter((r) => r.id !== id));
+      setRecords((prev) => {
+        const updated = prev.filter((r) => r.id !== id);
+        try {
+          const liveOnly = updated.filter((r) => !mockRecords.some((m) => m.id === r.id));
+          localStorage.setItem("satquery_history", JSON.stringify(liveOnly));
+        } catch (e) {}
+        return updated;
+      });
     }
   };
+
 
   const resetPageIfOutOfBounds = () => {
     if (page > totalPages && totalPages > 0) setPage(totalPages);
   };
 
-  // ensure page stays valid when filtered changes
+  // ensure page stays valid when filtered changes & load live localStorage history
   React.useEffect(() => {
+    try {
+      const saved = localStorage.getItem("satquery_history");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setRecords([...parsed, ...mockRecords]);
+        }
+      }
+    } catch (e) {
+      console.warn("Error loading history from localStorage:", e);
+    }
     resetPageIfOutOfBounds();
   }, [filtered, totalPages]);
+
 
   return (
     <div className="p-6 md:p-8 max-w-7xl mx-auto">
       {/* Header */}
-      <h1 className="text-3xl font-bold text-slate-800">Analysis History</h1>
-      <p className="mt-1 text-gray-600 mb-6">
+      <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Analysis History</h1>
+      <p className="mt-1 text-slate-600 dark:text-slate-400 mb-6 font-medium text-sm">
         Review and manage your past analyses and interactions.
       </p>
 
       {/* Search */}
       <div className="relative mb-6 w-full max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4.5 w-4.5 text-slate-400 dark:text-slate-500" />
         <input
           type="text"
           placeholder="Search analyses..."
-          className="w-full pl-10 pr-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+          className="w-full pl-10 pr-4 py-2 border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
           value={search}
           onChange={(e) => {
             setSearch(e.target.value);
@@ -180,54 +200,69 @@ export default function HistoryPage() {
       {/* Records Grid */}
       {paginated.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-gray-500">No analyses found</p>
+          <p className="text-slate-500 dark:text-slate-400">No analyses found</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {paginated.map((rec) => (
             <div
               key={rec.id}
-              className="bg-white rounded-xl shadow border border-gray-100 p-4 flex flex-col h-full"
+              className="bg-white/90 dark:bg-slate-900/90 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-800/80 p-5 flex flex-col justify-between h-[430px] backdrop-blur-md hover:shadow-md hover:border-purple-500/50 dark:hover:border-purple-500/50 transition-all duration-200 overflow-hidden"
             >
-              {/* Image */}
-              <img
-                src={rec.image}
-                alt={rec.filename}
-                className="w-full h-40 object-cover rounded-md mb-4"
-              />
-              {/* Type */}
-              <p className="text-sm font-medium text-purple-600 mb-1">{rec.type}</p>
-              {/* Question */}
-              <p className="text-sm font-medium text-gray-800 flex-1 mb-2 line-clamp-2">
-                {rec.question}
-              </p>
-              {/* Date & Confidence */}
-              <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
-                <span>{new Date(rec.date).toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "numeric" })}</span>
-                <span>Confidence: {rec.confidence}%</span>
-              </div>
-              {/* Highlights */}
-              <div className="flex flex-wrap gap-1 mb-3">
-                {rec.highlights.map((h) => (
-                  <span
-                    key={h}
-                    className={`text-xs text-white px-2 py-0.5 rounded ${highlightColors[h] || "bg-gray-400"}`}
-                  >
-                    {h}
+              {/* Top content wrapper */}
+              <div className="space-y-2.5">
+                {/* Image */}
+                <div className="relative w-full h-40 rounded-xl overflow-hidden border border-slate-200/50 dark:border-slate-800/50 bg-slate-950">
+                  <img
+                    src={rec.image}
+                    alt={rec.filename}
+                    className="w-full h-full object-cover"
+                  />
+                  <span className="absolute top-2 right-2 bg-slate-900/80 text-emerald-400 text-[10px] font-bold px-2 py-0.5 rounded-full border border-slate-700/80 backdrop-blur-xs">
+                    {rec.confidence}% Confidence
                   </span>
-                ))}
+                </div>
+
+                {/* Type Badge */}
+                <p className="text-[11px] font-extrabold uppercase tracking-wider text-purple-600 dark:text-purple-400">
+                  {rec.type}
+                </p>
+
+                {/* Question Title */}
+                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 line-clamp-2 leading-snug">
+                  {rec.question}
+                </h3>
+
+                {/* Date */}
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                  {new Date(rec.date).toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "numeric" })}
+                </p>
+
+                {/* Highlights / Evidence Badges */}
+                <div className="flex flex-wrap gap-1.5 max-h-14 overflow-hidden pt-1">
+                  {rec.highlights.slice(0, 3).map((h, idx) => (
+                    <span
+                      key={idx}
+                      className="text-[11px] font-semibold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/70 border border-purple-200 dark:border-purple-800/60 px-2.5 py-0.5 rounded-lg truncate max-w-full"
+                    >
+                      {h}
+                    </span>
+                  ))}
+                </div>
               </div>
-              {/* Actions */}
-              <div className="mt-auto flex justify-between items-center">
+
+              {/* Actions Footer */}
+              <div className="flex justify-between items-center border-t border-slate-200/60 dark:border-slate-800/80 pt-3 mt-2">
                 <button
                   onClick={() => setDetailRecord(rec)}
-                  className="text-sm text-purple-600 hover:underline"
+                  className="text-xs font-bold text-purple-600 dark:text-purple-400 hover:underline flex items-center gap-1 cursor-pointer"
                 >
-                  View Details
+                  View Details &rarr;
                 </button>
                 <button
                   onClick={() => handleDelete(rec.id)}
-                  className="text-gray-400 hover:text-red-600"
+                  className="p-1 text-slate-400 hover:text-red-600 dark:hover:text-red-400 transition cursor-pointer"
+                  title="Delete record"
                 >
                   <Trash2 size={16} />
                 </button>
@@ -235,7 +270,9 @@ export default function HistoryPage() {
             </div>
           ))}
         </div>
+
       )}
+
 
       {/* Pagination */}
       {totalPages > 1 && (
@@ -268,50 +305,45 @@ export default function HistoryPage() {
 
       {/* Detail Modal */}
       {detailRecord && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/30 backdrop-blur-sm z-50">
-          <div className="bg-white rounded-xl max-w-lg w-full p-6 relative">
+        <div className="fixed inset-0 flex items-center justify-center bg-slate-950/60 backdrop-blur-md z-50 p-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-lg w-full p-6 relative shadow-2xl transition-colors">
             <button
               onClick={() => setDetailRecord(null)}
-              className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition"
             >
               <X size={20} />
             </button>
             <img
               src={detailRecord.image}
               alt={detailRecord.filename}
-              className="w-full h-48 object-cover rounded mb-4"
+              className="w-full h-48 object-cover rounded-xl mb-4 border border-slate-200/50 dark:border-slate-800/50"
             />
-            <h2 className="text-xl font-semibold text-gray-800 mb-2">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-3">
               {detailRecord.type}
             </h2>
-            <p className="text-sm text-gray-600 mb-2"><strong>Question:</strong> {detailRecord.question}</p>
-            <p className="text-sm text-gray-600 mb-2"><strong>Answer:</strong> {detailRecord.answer}</p>
-            <p className="text-sm text-gray-600 mb-2"><strong>File:</strong> {detailRecord.filename}</p>
-            <p className="text-sm text-gray-600 mb-2"><strong>Date:</strong> {new Date(detailRecord.date).toLocaleString()}</p>
-            <p className="text-sm text-gray-600 mb-2"><strong>Model:</strong> {detailRecord.model}</p>
-            <p className="text-sm text-gray-600 mb-2"><strong>Processing Time:</strong> {detailRecord.processingTime}</p>
-            <p className="text-sm text-gray-600 mb-2"><strong>Confidence:</strong> {detailRecord.confidence}%</p>
-            <div className="flex flex-wrap gap-1 mt-2">
+            <div className="space-y-2 text-xs text-slate-700 dark:text-slate-300">
+              <p><strong className="text-slate-900 dark:text-white">Question:</strong> {detailRecord.question}</p>
+              <p><strong className="text-slate-900 dark:text-white">Answer:</strong> {detailRecord.answer}</p>
+              <p><strong className="text-slate-900 dark:text-white">File:</strong> {detailRecord.filename}</p>
+              <p><strong className="text-slate-900 dark:text-white">Date:</strong> {new Date(detailRecord.date).toLocaleString()}</p>
+              <p><strong className="text-slate-900 dark:text-white">Model Engine:</strong> {detailRecord.model}</p>
+              <p><strong className="text-slate-900 dark:text-white">Processing Time:</strong> {detailRecord.processingTime}</p>
+              <p><strong className="text-slate-900 dark:text-white">Confidence:</strong> <span className="text-emerald-600 dark:text-emerald-400 font-bold">{detailRecord.confidence}%</span></p>
+            </div>
+            <div className="flex flex-wrap gap-1.5 mt-4">
               {detailRecord.highlights.map((h) => (
                 <span
                   key={h}
-                  className={`text-xs text-white px-2 py-0.5 rounded ${highlightColors[h] || "bg-gray-400"}`}
+                  className={`text-[11px] font-bold text-white px-2 py-0.5 rounded-md ${highlightColors[h] || "bg-purple-600"}`}
                 >
                   {h}
                 </span>
               ))}
             </div>
-            <div className="mt-4 text-center">
-              <button
-                onClick={() => alert("Re‑run functionality will be connected to the analysis workspace when backend integration is added.")}
-                className="px-4 py-2 bg-purple-600 text-white rounded hover:opacity-90"
-              >
-                Re‑run Analysis
-              </button>
-            </div>
           </div>
         </div>
       )}
+
     </div>
   );
 }
