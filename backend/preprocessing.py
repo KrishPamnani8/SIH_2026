@@ -51,10 +51,14 @@ def load_image_bytes(file_bytes: bytes, filename: str = "") -> dict:
             format_str = img.format or "PNG"
             num_channels = len(img.getbands())
         
-        # Convert to base64 for visual output transfer
+        # Resize to max 1024px to keep base64 payload lightweight (<400KB) for Colab GPU transfer
+        img_compressed = img.copy()
+        img_compressed.thumbnail((1024, 1024), Image.Resampling.LANCZOS)
+        
         buffered = io.BytesIO()
-        img.save(buffered, format="PNG")
+        img_compressed.save(buffered, format="JPEG", quality=85)
         b64_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
+
         
         return {
             "valid": True,

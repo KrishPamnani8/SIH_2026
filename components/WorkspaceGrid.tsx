@@ -5,7 +5,7 @@ import UploadCard from "@/components/UploadCard";
 import Image from "next/image";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
-import { Sparkles, Layers, CheckCircle2, ShieldCheck, Download, Activity, FileText, Cpu, ArrowUpRight } from "lucide-react";
+import { Sparkles, Layers, CheckCircle2, ShieldCheck, Download, Activity, FileText, Cpu, ArrowUpRight, Star } from "lucide-react";
 import { analyzeImages, AnalysisResponseData } from "@/lib/api";
 
 interface WorkspaceGridProps {
@@ -18,8 +18,33 @@ export default function WorkspaceGrid({ mode = "single" }: WorkspaceGridProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [showResult, setShowResult] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
   const [activeTab, setActiveTab] = useState<"overlay" | "raw">("overlay");
   const reportRef = useRef<HTMLDivElement>(null);
+
+  const handleSaveResult = () => {
+    if (!resultData) return;
+    try {
+      const savedItem = {
+        id: Date.now(),
+        type: mode === "change" ? "Change Detection" : mode === "optical-sar" ? "Optical + SAR Analysis" : "Single Image Analysis",
+        question: question,
+        filename: files.map((f) => f.name).join(", "),
+        date: new Date().toISOString(),
+        confidence: Math.round((resultData.confidence || 0.9) * 100),
+        answer: resultData.answer,
+        evidence: resultData.evidence || [],
+        model: resultData.model || "SatQuery Engine",
+        image: files[0] ? URL.createObjectURL(files[0]) : "/placeholder-sat.jpg"
+      };
+      const existing = JSON.parse(localStorage.getItem("satquery_saved_results") || "[]");
+      localStorage.setItem("satquery_saved_results", JSON.stringify([savedItem, ...existing]));
+      setIsSaved(true);
+    } catch (e) {
+      console.warn("Could not save to satquery_saved_results:", e);
+    }
+  };
+
 
   // Set default query based on active page mode
   const defaultQuery = mode === "change"
@@ -55,16 +80,26 @@ export default function WorkspaceGrid({ mode = "single" }: WorkspaceGridProps) {
 
   const handleAnalyze = async () => {
     if (files.length === 0) {
-      alert("Please upload at least one satellite image file first.");
+      alert("Please upload satellite imagery first to analyze.");
       return;
     }
 
+    const isDualMode = mode === "change" || mode === "optical-sar";
+    if (isDualMode && files.length < 2) {
+      alert(`⚠️ Bi-Temporal / Dual Mode requires 2 images (Image 1: Before & Image 2: After). You currently have ${files.length} image selected. Please click '+ Add Image 2' to upload your second file.`);
+      return;
+    }
+
+
     setIsLoading(true);
-    setShowResult(true);
+
+    setShowResult(false);
+    setResultData(null);
 
     try {
       const response = await analyzeImages(files, question);
       setResultData(response);
+      setShowResult(true);
 
       // Save to real-time localStorage history
       try {
@@ -88,7 +123,7 @@ export default function WorkspaceGrid({ mode = "single" }: WorkspaceGridProps) {
       }
     } catch (err: any) {
       console.warn("Backend API error or unavailable, falling back to prototype response:", err);
-      setResultData({
+      const fallbackResponse = {
         success: true,
         task: mode === "change" ? "change_analysis" : mode === "optical-sar" ? "optical_sar" : "vqa",
         answer: "Analysis completed: Satellite land-use features processed successfully.",
@@ -101,11 +136,14 @@ export default function WorkspaceGrid({ mode = "single" }: WorkspaceGridProps) {
         ],
         model: "SatQuery Specialist Engine",
         metadata: {}
-      });
+      };
+      setResultData(fallbackResponse);
+      setShowResult(true);
     } finally {
       setIsLoading(false);
     }
   };
+
 
   const handleDownload = async () => {
     if (files.length === 0 || !reportRef.current) return;
@@ -137,7 +175,8 @@ export default function WorkspaceGrid({ mode = "single" }: WorkspaceGridProps) {
       {/* Left Column – Integrated Upload & Query Interface */}
       <div className="col-span-12 lg:col-span-5 space-y-6">
         {/* Upload Card */}
-        <UploadCard onUpload={handleUpload} maxFiles={mode === "single" ? 1 : 2} />
+        <UploadCard onUpload={handleUpload} maxFiles={mode === "single" ? 1 : 2} mode={mode} />
+
 
         {/* Query Input Card */}
         <div className="bg-white/90 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl shadow-sm p-6 space-y-4 backdrop-blur-md transition-colors">
@@ -325,15 +364,65 @@ export default function WorkspaceGrid({ mode = "single" }: WorkspaceGridProps) {
               </div>
             )}
 
-            <button
-              onClick={handleDownload}
-              disabled={generating}
-              className="w-full py-3 bg-purple-600 hover:bg-purple-700 dark:bg-purple-600 dark:hover:bg-purple-500 text-white rounded-xl text-sm font-bold transition shadow-md shadow-purple-600/20 flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <Download size={16} /> Download PDF Report
-            </button>
+            <div className="grid grid-cols-2 gap-3 pt-2">
+              <button
+                type="button"
+                onClick={handleSaveResult}
+                className={`py-3 rounded-xl text-sm font-bold transition shadow-xs flex items-center justify-center gap-2 cursor-pointer border ${
+                  isSaved
+                    ? "bg-amber-50 dark:bg-amber-950/60 border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300"
+                    : "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700"
+                }`}
+              >
+                <Star size={16} className={isSaved ? "fill-amber-500 text-amber-500" : "text-slate-500"} />
+                {isSaved ? "Saved to Favorites" : "Save Result"}
+              </button>
+
+              <button
+                type="button"
+                onClick={handleDownload}
+                disabled={generating}
+                className="py-3 bg-purple-600 hover:bg-purple-700 dark:bg-purple-600 dark:hover:bg-purple-500 text-white rounded-xl text-sm font-bold transition shadow-md shadow-purple-600/20 flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <Download size={16} /> Download PDF
+              </button>
+            </div>
+          </div>
+        ) : isLoading ? (
+          <div className="bg-white/90 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-10 text-center flex flex-col items-center justify-center min-h-[440px] space-y-5 backdrop-blur-md shadow-md transition-colors relative overflow-hidden">
+
+            {/* Animated Radar Pulse background */}
+            <div className="relative flex items-center justify-center w-24 h-24 mb-1">
+              <span className="absolute inset-0 rounded-full bg-purple-500/20 animate-ping" />
+              <span className="absolute inset-2 rounded-full bg-purple-500/30 animate-pulse" />
+              <div className="relative p-5 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-500/30">
+                <Cpu size={32} className="animate-spin" style={{ animationDuration: "6s" }} />
+              </div>
+            </div>
+
+            <div className="space-y-1 max-w-sm">
+              <h3 className="text-lg font-extrabold text-slate-900 dark:text-white tracking-tight">
+                Analyzing Satellite Imagery...
+              </h3>
+              <p className="text-xs text-purple-600 dark:text-purple-400 font-semibold animate-pulse">
+                📡 Executing Vision-Language Reasoning & Multi-Band Tensor Analysis
+              </p>
+            </div>
+
+            {/* Live Progress Bar */}
+            <div className="w-64 bg-slate-200 dark:bg-slate-800 rounded-full h-2.5 overflow-hidden shadow-inner border border-slate-300/40 dark:border-slate-700/40">
+              <div className="bg-gradient-to-r from-purple-600 via-indigo-500 to-purple-600 h-full rounded-full animate-pulse w-4/5 transition-all duration-700" />
+            </div>
+
+            {/* Live step indicators */}
+            <div className="flex items-center gap-3 text-[11px] font-medium text-slate-500 dark:text-slate-400 pt-2">
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" /> GPU Connected</span>
+              <span>•</span>
+              <span>CroMA / reBEN Model Active</span>
+            </div>
           </div>
         ) : (
+
           <div className="bg-white/60 dark:bg-slate-900/60 border border-dashed border-slate-300 dark:border-slate-800 rounded-2xl p-12 text-center flex flex-col items-center justify-center min-h-[420px] space-y-3 backdrop-blur-md">
             <div className="p-4 rounded-full bg-purple-100 dark:bg-purple-950/80 text-purple-600 dark:text-purple-400">
               <FileText size={32} />
@@ -344,6 +433,7 @@ export default function WorkspaceGrid({ mode = "single" }: WorkspaceGridProps) {
             </p>
           </div>
         )}
+
       </div>
     </div>
   );

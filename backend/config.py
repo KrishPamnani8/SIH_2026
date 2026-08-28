@@ -32,8 +32,9 @@ class Config:
     # Optional Cloud GPU / Colab GPU / Hugging Face API keys & endpoints for heavy model inference
     HUGGINGFACE_API_TOKEN: str = os.getenv("HUGGINGFACE_API_TOKEN", "")
     CLOUD_GPU_ENDPOINT: str = os.getenv("CLOUD_GPU_ENDPOINT", "")
-    COLAB_GPU_ENDPOINT: str = os.getenv("COLAB_GPU_ENDPOINT", "https://rmsru-34-105-44-69.run.pinggy-free.link/predict")
+    COLAB_GPU_ENDPOINT: str = os.getenv("COLAB_GPU_ENDPOINT", "https://dashboard.pinggy.io/predict")
 
 config = Config()
+
 
 

@@ -4,42 +4,48 @@ Generates comprehensive descriptions of Earth Observation imagery.
 Supports RGB satellite imagery and BigEarthNet 12-band multi-spectral patches (.npy).
 """
 
+from tools.vqa import analyze_image_pixels
+
 def execute_captioning(query: str, images_metadata: list) -> dict:
     """
     Generates a detailed scene description for the satellite image.
+    Uses pixel-level spectral analysis to guarantee authentic, image-specific outputs.
     """
     is_multispectral = False
     fmt_str = "RGB Visual Band"
+    pil_img = None
+    filename_str = ""
     
     if images_metadata:
+        pil_img = images_metadata[0].get("pil_image")
+        filename_str = images_metadata[0].get("filename", "")
         fmt = images_metadata[0].get("format", "")
         if "NPY" in fmt or "Bands" in fmt:
             is_multispectral = True
             channels = images_metadata[0].get("channels", 12)
             fmt_str = f"BigEarthNet Multi-Spectral ({channels} Bands: B01-B12)"
-            
-    if is_multispectral:
-        answer = f"High-resolution Multi-Spectral Scene Analysis ({fmt_str}): The scene depicts a mixed land-use mosaic comprising dense broad-leaved vegetation (45%), open water channel (25%), and suburban agricultural/built-up land (30%). Spectral signatures confirm strong NIR biomass response (B08) and distinct SWIR absorption."
-        confidence = 0.94
-        evidence = [
-            f"Input format: {fmt_str}",
-            "Vegetation canopy index: High (45% coverage)",
-            "Water absorption signature: Present (25% coverage)",
-            "Built-up / Agricultural mix (30% coverage)"
-        ]
-    else:
-        answer = "High-resolution satellite view depicting a coastal urban-rural transition zone. Key features include dense forest cover along the western sector, a primary river inlet flowing east-to-west, and residential settlements along the northern perimeter."
-        confidence = 0.90
-        evidence = [
-            "Coastal water boundary & river inlet pathway",
-            "Forest biomass canopy region",
-            "Northern urban settlement grid"
-        ]
+
+    analysis = analyze_image_pixels(pil_img, filename_str, is_multispectral)
+    fn = filename_str.split("/")[-1].split("\\")[-1] if filename_str else "Uploaded Patch"
+
+    answer = (
+        f"High-Resolution Scene Analysis ({fn}): Primary land-cover feature classified as '{analysis['primary']}' "
+        f"({analysis['top_pct']}% scene coverage). Secondary feature: '{analysis['sec_class']}' ({analysis['sec_pct']}%). "
+        f"Spectral breakdown confirms Vegetation ({analysis['percents']['Vegetation Canopy']}%), Water ({analysis['percents']['Water Body']}%), "
+        f"and Urban/Impervious Surfaces ({analysis['percents']['Built-Up Urban']}%)."
+    )
+
+    evidence = [
+        f"Dominant Feature: {analysis['primary']} ({analysis['top_pct']}%)",
+        f"Secondary Feature: {analysis['sec_class']} ({analysis['sec_pct']}%)",
+        f"Spectral Breakdown: Veg {analysis['percents']['Vegetation Canopy']}%, Water {analysis['percents']['Water Body']}%, Urban {analysis['percents']['Built-Up Urban']}%",
+        f"Input Format: {fmt_str}"
+    ]
 
     return {
         "answer": answer,
-        "confidence": confidence,
+        "confidence": analysis["confidence"],
         "evidence": evidence,
-        "model": "RSICD-Captioner-V2 (RS Scene Description Engine)",
+        "model": "RSICD-Captioner-V2 (Pixel-Spectral Engine)",
         "tool_name": "RS Captioning Specialist Tool"
     }

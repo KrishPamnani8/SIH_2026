@@ -1,26 +1,40 @@
 "use client";
 
-import * as React from "react";
-import { Switch } from "@radix-ui/react-switch";
+import React, { useEffect, useState } from "react";
 import { Sun, Moon } from "lucide-react";
 import { useTheme } from "next-themes";
 
 export default function ThemeToggle() {
   const { theme, setTheme } = useTheme();
-  const checked = theme === "dark";
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <div className="w-16 h-8 rounded-full bg-slate-200 dark:bg-slate-800 animate-pulse" />
+    );
+  }
+
+  const isDark = theme === "dark";
 
   return (
-    <label className="flex items-center gap-2 cursor-pointer rounded-full bg-slate-100 dark:bg-slate-800 px-3 py-1">
-      <Sun size={16} className="text-yellow-500" />
-      <Switch
-        checked={checked}
-        onCheckedChange={c => setTheme(c ? "dark" : "light")}
-        className="relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 disabled:opacity-70 disabled:pointer-events-none data-[state=checked]:bg-purple-600 data-[state=unchecked]:bg-slate-300"
-      >
-        <span className="sr-only">Toggle theme</span>
-        <span className="pointer-events-none block h-4 w-4 translate-x-0 rounded-full bg-white shadow-lg ring-0 transition-transform data-[state=checked]:translate-x-4 data-[state=unchecked]:translate-x-0" />
-      </Switch>
-      <Moon size={16} className="text-gray-600" />
-    </label>
+    <button
+      type="button"
+      onClick={() => setTheme(isDark ? "light" : "dark")}
+      className="relative inline-flex items-center h-8 w-16 rounded-full bg-slate-200 dark:bg-slate-800 p-1 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-purple-500/50 shadow-inner cursor-pointer"
+      title="Toggle Light / Dark Mode"
+    >
+      <Sun size={14} className="text-amber-500 absolute left-2" />
+      <Moon size={14} className="text-purple-400 absolute right-2" />
+      <span
+        className={`inline-block h-6 w-6 rounded-full bg-white dark:bg-slate-900 shadow-md transform transition-transform duration-300 z-10 ${
+          isDark ? "translate-x-8 bg-slate-900" : "translate-x-0 bg-white"
+        }`}
+      />
+    </button>
   );
 }
+
