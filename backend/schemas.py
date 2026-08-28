@@ -4,6 +4,9 @@ from typing import List, Optional, Dict, Any
 class AnalysisResponse(BaseModel):
     success: bool = True
     task: str = Field(..., description="The classified task, e.g. vqa, captioning, grounding, change_analysis, optical_sar")
+    # LangGraph additions
+    image_type: str = Field("single", description="Classified input type: single | bi-temporal | optical_sar")
+    intent: str = Field("vqa", description="LLM-parsed query intent: what_changed | describe | detect | vqa | ground")
     answer: str = Field(..., description="Natural language answer or analysis description")
     confidence: Optional[float] = Field(None, description="Confidence score between 0 and 1, or None if unavailable")
     evidence: List[str] = Field(default_factory=list, description="Extracted key features or highlighted evidence items")
@@ -15,4 +18,4 @@ class AnalysisResponse(BaseModel):
 class HealthCheckResponse(BaseModel):
     status: str = "ok"
     project: str = "SatQuery AI Backend"
-    version: str = "0.1.0"
+    version: str = "0.2.0"
