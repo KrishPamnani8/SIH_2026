@@ -181,3 +181,65 @@ def generate_optical_sar_fusion_b64(optical_img: Image.Image, sar_img: Image.Ima
     fusion_map.save(buffered, format="PNG")
     return f"data:image/png;base64,{base64.b64encode(buffered.getvalue()).decode('utf-8')}"
 
+def load_croma_arrays(file_bytes: bytes, filename: str = "") -> dict:
+    """
+    Load raw Sentinel-2 optical and Sentinel-1 SAR arrays
+    for CROMA without converting them to RGB.
+
+    Optical expected: 12 channels
+    SAR expected: 2 channels (VV, VH)
+    """
+
+    import io
+    import numpy as np
+
+    try:
+        # ---------------------------------------------------------
+        # Load NPY data
+        # ---------------------------------------------------------
+        arr = np.load(io.BytesIO(file_bytes))
+
+        # ---------------------------------------------------------
+        # Convert HWC -> CHW if necessary
+        # ---------------------------------------------------------
+        if arr.ndim == 3:
+
+            # HWC: (H, W, C)
+            if arr.shape[-1] in (2, 12, 13):
+                arr = np.transpose(arr, (2, 0, 1))
+
+            # CHW: already correct
+            elif arr.shape[0] in (2, 12, 13):
+                pass
+
+            else:
+                raise ValueError(
+                    f"Unsupported 3D array shape: {arr.shape}"
+                )
+
+        elif arr.ndim == 2:
+            # Single channel
+            arr = arr[None, :, :]
+
+        else:
+            raise ValueError(
+                f"Unsupported array dimensions: {arr.shape}"
+            )
+
+        arr = arr.astype(np.float32)
+
+        return {
+            "valid": True,
+            "array": arr,
+            "channels": arr.shape[0],
+            "height": arr.shape[1],
+            "width": arr.shape[2],
+            "filename": filename
+        }
+
+    except Exception as e:
+
+        return {
+            "valid": False,
+            "error": str(e)
+        }
