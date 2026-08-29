@@ -114,6 +114,24 @@ const highlightColors: Record<string, string> = {
   "Agricultural Land": "bg-purple-500",
 };
 
+function formatDate(dateStr: string) {
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const month = months[d.getMonth()];
+    const day = d.getDate();
+    const year = d.getFullYear();
+    let hours = d.getHours();
+    const minutes = d.getMinutes().toString().padStart(2, "0");
+    const ampm = hours >= 12 ? "PM" : "AM";
+    hours = hours % 12 || 12;
+    return `${month} ${day}, ${year}, ${hours}:${minutes} ${ampm}`;
+  } catch (e) {
+    return dateStr;
+  }
+}
+
 // ---------- Component ----------
 export default function HistoryPage() {
   const [records, setRecords] = useState<HistoryRecord[]>(mockRecords);
@@ -234,8 +252,8 @@ export default function HistoryPage() {
                 </h3>
 
                 {/* Date */}
-                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                  {new Date(rec.date).toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "numeric" })}
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium" suppressHydrationWarning>
+                  {formatDate(rec.date)}
                 </p>
 
                 {/* Highlights / Evidence Badges */}
@@ -325,7 +343,7 @@ export default function HistoryPage() {
               <p><strong className="text-slate-900 dark:text-white">Question:</strong> {detailRecord.question}</p>
               <p><strong className="text-slate-900 dark:text-white">Answer:</strong> {detailRecord.answer}</p>
               <p><strong className="text-slate-900 dark:text-white">File:</strong> {detailRecord.filename}</p>
-              <p><strong className="text-slate-900 dark:text-white">Date:</strong> {new Date(detailRecord.date).toLocaleString()}</p>
+              <p><strong className="text-slate-900 dark:text-white">Date:</strong> <span suppressHydrationWarning>{formatDate(detailRecord.date)}</span></p>
               <p><strong className="text-slate-900 dark:text-white">Model Engine:</strong> {detailRecord.model}</p>
               <p><strong className="text-slate-900 dark:text-white">Processing Time:</strong> {detailRecord.processingTime}</p>
               <p><strong className="text-slate-900 dark:text-white">Confidence:</strong> <span className="text-emerald-600 dark:text-emerald-400 font-bold">{detailRecord.confidence}%</span></p>

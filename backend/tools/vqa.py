@@ -22,8 +22,13 @@ def execute_vqa(query: str, images_metadata: list) -> dict:
     
     if images_metadata:
         b64_image = images_metadata[0].get("b64_image", "")
-        if "," in b64_image:
-            b64_image = b64_image.split(",")[1]
+        if not b64_image and images_metadata[0].get("pil_image"):
+            import io, base64
+            buf = io.BytesIO()
+            images_metadata[0]["pil_image"].save(buf, format="PNG")
+            b64_image = base64.b64encode(buf.getvalue()).decode("utf-8")
+        elif "," in b64_image:
+            b64_image = b64_image.split(",", 1)[1]
             
         fmt = images_metadata[0].get("format", "")
         if "NPY" in fmt or "Bands" in fmt:

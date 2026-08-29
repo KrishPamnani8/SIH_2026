@@ -1,11 +1,11 @@
-﻿"""
+"""
 LangGraph Node Implementations for SatQuery AI.
 
-Node 1: classify_input_node   â€” deterministic image type + modality detection
-Node 2: understand_query_node â€” LLM-powered NL intent parser (Gemini â†’ Groq â†’ keyword fallback)
-Node 3: plan_task_node        â€” combines image_type + intent â†’ task + model_plan
-Node 4: dispatch_tool_node    â€” routes to the correct specialist tool executor
-Node 5: build_response_node   â€” assembles the final AnalysisResponse
+Node 1: classify_input_node   - deterministic image type + modality detection
+Node 2: understand_query_node - LLM-powered NL intent parser (Gemini -> Groq -> keyword fallback)
+Node 3: plan_task_node        - combines image_type + intent -> task + model_plan
+Node 4: dispatch_tool_node    - routes to the correct specialist tool executor
+Node 5: build_response_node   - assembles the final AnalysisResponse
 """
 
 import sys
@@ -25,9 +25,9 @@ from tools.change_analysis import execute_change_analysis
 from tools.optical_sar import execute_optical_sar
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€
 # NODE 1: Input Classifier
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€
 
 def classify_input_node(state: AgentState) -> AgentState:
     """
@@ -36,15 +36,15 @@ def classify_input_node(state: AgentState) -> AgentState:
       modality   : "optical" | "sar" | "both" | "unknown"
 
     Logic:
-      - 1 image â†’ single
+      - 1 image -> single
       - 2 images:
           * one has 2 channels (SAR VV/VH .npy) and other has 12 channels (optical .npy)
-            â†’ optical_sar
+            -> optical_sar
           * both have similar channel counts, or both RGB
-            â†’ bi-temporal
+            -> bi-temporal
     """
     trace = list(state.get("execution_trace", []))
-    trace.append("[LangGraph] Node 1 â€” Input Classifier: Starting image type detection")
+    trace.append("[LangGraph] Node 1 - Input Classifier: Starting image type detection")
 
     images_metadata = state.get("images_metadata", [])
     num_images = len(images_metadata)
@@ -55,7 +55,7 @@ def classify_input_node(state: AgentState) -> AgentState:
     if num_images == 0:
         image_type = "single"
         modality = "unknown"
-        trace.append("[LangGraph] Node 1 â€” No images provided.")
+        trace.append("[LangGraph] Node 1 - No images provided.")
     elif num_images == 1:
         meta = images_metadata[0]
         channels = meta.get("channels", 3)
@@ -67,7 +67,7 @@ def classify_input_node(state: AgentState) -> AgentState:
         else:
             modality = "optical"
         image_type = "single"
-        trace.append(f"[LangGraph] Node 1 â€” Single image detected: {channels}ch, format={fmt}, modality={modality}")
+        trace.append(f"[LangGraph] Node 1 - Single image detected: {channels}ch, format={fmt}, modality={modality}")
     else:
         # 2+ images
         meta0 = images_metadata[0]
@@ -86,13 +86,13 @@ def classify_input_node(state: AgentState) -> AgentState:
         if (is_sar_0 and is_optical_npy_1) or (is_sar_1 and is_optical_npy_0):
             image_type = "optical_sar"
             modality = "both"
-            trace.append(f"[LangGraph] Node 1 â€” Optical+SAR pair detected: img0={ch0}ch, img1={ch1}ch")
+            trace.append(f"[LangGraph] Node 1 - Optical+SAR pair detected: img0={ch0}ch, img1={ch1}ch")
         else:
             image_type = "bi-temporal"
             modality = "optical"
-            trace.append(f"[LangGraph] Node 1 â€” Bi-temporal pair detected: img0={ch0}ch ({fmt0}), img1={ch1}ch ({fmt1})")
+            trace.append(f"[LangGraph] Node 1 - Bi-temporal pair detected: img0={ch0}ch ({fmt0}), img1={ch1}ch ({fmt1})")
 
-    trace.append(f"[LangGraph] Node 1 â†’ image_type='{image_type}', modality='{modality}', num_images={num_images}")
+    trace.append(f"[LangGraph] Node 1 -> image_type='{image_type}', modality='{modality}', num_images={num_images}")
 
     return {
         **state,
@@ -103,9 +103,9 @@ def classify_input_node(state: AgentState) -> AgentState:
     }
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€
 # NODE 2: Query Understander
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€
 
 def _build_intent_prompt(query: str, image_type: str, num_images: int) -> str:
     return f"""You are an expert remote sensing AI assistant.
@@ -124,11 +124,11 @@ Context:
   - query: "{query}"
 
 Rules:
-  - If image_type is "bi-temporal" or "optical_sar" and the query mentions change/difference/before/after â†’ "what_changed"
-  - If query mentions describe/caption/summary/overview/what is â†’ "describe"
-  - If query mentions highlight/locate/segment/box/find/where â†’ "ground"
-  - If query mentions detect/identify/road/building/count â†’ "detect"
-  - Otherwise â†’ "vqa"
+  - If image_type is "bi-temporal" or "optical_sar" and the query mentions change/difference/before/after -> "what_changed"
+  - If query mentions describe/caption/summary/overview/what is -> "describe"
+  - If query mentions highlight/locate/segment/box/find/where -> "ground"
+  - If query mentions detect/identify/road/building/count -> "detect"
+  - Otherwise -> "vqa"
 
 Respond ONLY with a valid JSON object, no markdown, no explanation:
 {{"intent": "<one of the 5 intents>", "confidence": <0.0-1.0>, "reasoning": "<one sentence>"}}"""
@@ -149,14 +149,14 @@ def _parse_intent_json(raw: str) -> dict:
 
 def _llm_understand_intent(query: str, image_type: str, num_images: int) -> dict:
     """
-    Try LLM providers in order: Gemini â†’ Groq â†’ OpenAI â†’ fallback.
+    Try LLM providers in order: Gemini -> Groq -> OpenAI -> fallback.
     Returns {"intent": str, "confidence": float, "reasoning": str}.
     """
     import importlib
 
     prompt = _build_intent_prompt(query, image_type, num_images)
 
-    # â”€â”€ Attempt 1: Google Gemini â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ”€”€ Attempt 1: Google Gemini ”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€
     try:
         from config import config
         if config.GEMINI_API_KEY:
@@ -174,7 +174,7 @@ def _llm_understand_intent(query: str, image_type: str, num_images: int) -> dict
     except Exception as e:
         pass  # Fall through to next provider
 
-    # â”€â”€ Attempt 2: Groq (LLaMA-3) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ”€”€ Attempt 2: Groq (LLaMA-3) ”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€
     try:
         from config import config
         if config.GROQ_API_KEY:
@@ -192,7 +192,7 @@ def _llm_understand_intent(query: str, image_type: str, num_images: int) -> dict
     except Exception:
         pass
 
-    # â”€â”€ Attempt 3: OpenAI â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ”€”€ Attempt 3: OpenAI ”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€
     try:
         from config import config
         if config.OPENAI_API_KEY:
@@ -210,7 +210,7 @@ def _llm_understand_intent(query: str, image_type: str, num_images: int) -> dict
     except Exception:
         pass
 
-    # â”€â”€ Fallback: Deterministic keyword rules â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ”€”€ Fallback: Deterministic keyword rules ”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€
     return None
 
 
@@ -237,7 +237,7 @@ def understand_query_node(state: AgentState) -> AgentState:
     with graceful keyword-based fallback when no API key is configured.
     """
     trace = list(state.get("execution_trace", []))
-    trace.append("[LangGraph] Node 2 â€” Query Understander: Parsing NL intent...")
+    trace.append("[LangGraph] Node 2 - Query Understander: Parsing NL intent...")
 
     query = state.get("query", "")
     image_type = state.get("image_type", "single")
@@ -248,18 +248,18 @@ def understand_query_node(state: AgentState) -> AgentState:
 
     if result and result.get("intent"):
         provider = result.get("provider", "LLM")
-        trace.append(f"[LangGraph] Node 2 â€” LLM ({provider}) parsed intent: '{result['intent']}' (confidence={result.get('confidence', 0):.2f})")
-        trace.append(f"[LangGraph] Node 2 â€” Reasoning: {result.get('reasoning', '')}")
+        trace.append(f"[LangGraph] Node 2 - LLM ({provider}) parsed intent: '{result['intent']}' (confidence={result.get('confidence', 0):.2f})")
+        trace.append(f"[LangGraph] Node 2 - Reasoning: {result.get('reasoning', '')}")
     else:
         result = _keyword_fallback_intent(query, image_type)
-        trace.append(f"[LangGraph] Node 2 â€” Keyword fallback intent: '{result['intent']}' (no LLM API key configured)")
+        trace.append(f"[LangGraph] Node 2 - Keyword fallback intent: '{result['intent']}' (no LLM API key configured)")
 
     valid_intents = {"what_changed", "describe", "detect", "vqa", "ground"}
     intent = result.get("intent", "vqa")
     if intent not in valid_intents:
         intent = "vqa"
 
-    trace.append(f"[LangGraph] Node 2 â†’ intent='{intent}', confidence={result.get('confidence', 0):.2f}")
+    trace.append(f"[LangGraph] Node 2 -> intent='{intent}', confidence={result.get('confidence', 0):.2f}")
 
     return {
         **state,
@@ -270,18 +270,18 @@ def understand_query_node(state: AgentState) -> AgentState:
     }
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€
 # NODE 3: Task Planner
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€
 
-# Decision table: (image_type, intent) â†’ (task, model_plan)
+# Decision table: (image_type, intent) -> (task, model_plan)
 _PLAN_TABLE = {
-    # Bi-temporal + change â†’ ChangeTransformer
+    # Bi-temporal + change -> ChangeTransformer
     ("bi-temporal", "what_changed"): (
         "change_analysis",
         "BIT/ChangeFormer Bi-Temporal Transformer (Colab GPU) | CPU pixel-diff fallback"
     ),
-    # Optical+SAR pair â†’ CROMA fusion regardless of intent
+    # Optical+SAR pair -> CROMA fusion regardless of intent
     ("optical_sar", "what_changed"): (
         "optical_sar",
         "CROMA Cross-Modal Fusion (Colab GPU) | PIL false-color fallback"
@@ -321,9 +321,9 @@ _PLAN_TABLE = {
     ),
     ("single", "what_changed"): (
         "change_analysis",
-        "Single image baseline â€” please upload T1+T2 pair for full change detection"
+        "Single image baseline - please upload T1+T2 pair for full change detection"
     ),
-    # Bi-temporal with non-change intents â†’ still do change analysis (2 images â†’ compare)
+    # Bi-temporal with non-change intents -> still do change analysis (2 images -> compare)
     ("bi-temporal", "describe"): (
         "change_analysis",
         "BIT/ChangeFormer Bi-Temporal Change Description"
@@ -345,11 +345,11 @@ _PLAN_TABLE = {
 
 def plan_task_node(state: AgentState) -> AgentState:
     """
-    Combines image_type + intent â†’ selects pipeline (task) and model_plan.
-    Pure deterministic logic â€” the LLM already handled ambiguity in Node 2.
+    Combines image_type + intent -> selects pipeline (task) and model_plan.
+    Pure deterministic logic - the LLM already handled ambiguity in Node 2.
     """
     trace = list(state.get("execution_trace", []))
-    trace.append("[LangGraph] Node 3 â€” Task Planner: Selecting pipeline...")
+    trace.append("[LangGraph] Node 3 - Task Planner: Selecting pipeline...")
 
     image_type = state.get("image_type", "single")
     intent = state.get("intent", "vqa")
@@ -357,8 +357,8 @@ def plan_task_node(state: AgentState) -> AgentState:
     key = (image_type, intent)
     task, model_plan = _PLAN_TABLE.get(key, ("vqa", "LLaVA-1.5-7B VQA (default fallback)"))
 
-    trace.append(f"[LangGraph] Node 3 â€” Decision: ({image_type}, {intent}) â†’ task='{task}'")
-    trace.append(f"[LangGraph] Node 3 â€” Model Plan: {model_plan}")
+    trace.append(f"[LangGraph] Node 3 - Decision: ({image_type}, {intent}) -> task='{task}'")
+    trace.append(f"[LangGraph] Node 3 - Model Plan: {model_plan}")
 
     return {
         **state,
@@ -368,9 +368,9 @@ def plan_task_node(state: AgentState) -> AgentState:
     }
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€
 # NODE 4: Tool Dispatcher
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€
 
 def dispatch_tool_node(state: AgentState) -> AgentState:
     """
@@ -385,15 +385,15 @@ def dispatch_tool_node(state: AgentState) -> AgentState:
     images_metadata = state.get("images_metadata", [])
 
     _TOOL_LABELS = {
-        "vqa": "VQA (Visual Question Answering) â€” LLaVA-1.5-7B",
-        "captioning": "Scene Captioning â€” RSICD-Captioner-V2",
-        "grounding": "Text-Guided Visual Grounding â€” RS-GeoChat",
-        "change_analysis": "Bi-Temporal Change Analysis â€” BIT/ChangeFormer Transformer",
-        "optical_sar": "Optical+SAR Cross-Modal Fusion â€” CROMA",
+        "vqa": "VQA (Visual Question Answering) - LLaVA-1.5-7B",
+        "captioning": "Scene Captioning - RSICD-Captioner-V2",
+        "grounding": "Text-Guided Visual Grounding - RS-GeoChat",
+        "change_analysis": "Bi-Temporal Change Analysis - BIT/ChangeFormer Transformer",
+        "optical_sar": "Optical+SAR Cross-Modal Fusion - CROMA",
     }
 
     label = _TOOL_LABELS.get(task, task.upper())
-    trace.append(f"[LangGraph] Node 4 â€” Dispatching to: {label}")
+    trace.append(f"[LangGraph] Node 4 - Dispatching to: {label}")
 
     try:
         if task == "vqa":
@@ -407,16 +407,16 @@ def dispatch_tool_node(state: AgentState) -> AgentState:
         elif task == "optical_sar":
             tool_result = execute_optical_sar(query, images_metadata)
         else:
-            trace.append(f"[LangGraph] Node 4 â€” Unknown task '{task}', falling back to VQA")
+            trace.append(f"[LangGraph] Node 4 - Unknown task '{task}', falling back to VQA")
             tool_result = execute_vqa(query, images_metadata)
 
-        trace.append(f"[LangGraph] Node 4 â€” Tool executed successfully: {tool_result.get('model', 'N/A')}")
-        trace.append(f"[LangGraph] Node 4 â€” Confidence: {tool_result.get('confidence', 'N/A')}")
+        trace.append(f"[LangGraph] Node 4 - Tool executed successfully: {tool_result.get('model', 'N/A')}")
+        trace.append(f"[LangGraph] Node 4 - Confidence: {tool_result.get('confidence', 'N/A')}")
 
     except Exception as e:
         error_msg = f"Tool execution error in '{task}': {str(e)}"
         errors.append(error_msg)
-        trace.append(f"[LangGraph] Node 4 â€” ERROR: {error_msg}")
+        trace.append(f"[LangGraph] Node 4 - ERROR: {error_msg}")
         tool_result = {
             "answer": f"Tool execution encountered an error: {str(e)}. Please check your input and try again.",
             "confidence": 0.0,
@@ -433,24 +433,24 @@ def dispatch_tool_node(state: AgentState) -> AgentState:
     }
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€
 # NODE 5: Response Builder
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€
 
 def build_response_node(state: AgentState) -> AgentState:
     """
     Finalizes the execution trace and prepares state for AnalysisResponse construction.
-    Does NOT construct AnalysisResponse directly â€” the graph runner does that
+    Does NOT construct AnalysisResponse directly - the graph runner does that
     so it can use the Pydantic model cleanly.
     """
     trace = list(state.get("execution_trace", []))
-    trace.append("[LangGraph] Node 5 â€” Response Builder: Assembling final response")
-    trace.append(f"[LangGraph] âœ“ Pipeline Complete â€” task='{state.get('task')}', intent='{state.get('intent')}', image_type='{state.get('image_type')}'")
+    trace.append("[LangGraph] Node 5 - Response Builder: Assembling final response")
+    trace.append(f"[LangGraph] œ“ Pipeline Complete - task='{state.get('task')}', intent='{state.get('intent')}', image_type='{state.get('image_type')}'")
 
     errors = state.get("errors", [])
     if errors:
         for err in errors:
-            trace.append(f"[LangGraph] âš  Warning: {err}")
+            trace.append(f"[LangGraph] š  Warning: {err}")
 
     return {
         **state,

@@ -21,11 +21,13 @@ export async function analyzeImage(
 
 export async function analyzeImages(
   files: File[],
-  query: string
+  query: string,
+  mode?: "single" | "change" | "optical-sar"
 ): Promise<AnalysisResponseData> {
   const formData = new FormData();
   files.forEach((f) => formData.append("files", f));
   formData.append("query", query);
+  if (mode) formData.append("mode", mode);
 
   const response = await fetch(`${API_BASE_URL}/analyze`, {
     method: "POST",

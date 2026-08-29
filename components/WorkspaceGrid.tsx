@@ -25,24 +25,24 @@ export default function WorkspaceGrid({ mode = "single" }: WorkspaceGridProps) {
   const defaultQuery = mode === "change"
     ? "Compare these two satellite images for bi-temporal land-use changes"
     : mode === "optical-sar"
-    ? "Analyze the optical and SAR images together for flooding evidence"
-    : "What is visible in this satellite image?";
+      ? "Analyze the optical and SAR images together for flooding evidence"
+      : "What is visible in this satellite image?";
 
   const [question, setQuestion] = useState(defaultQuery);
 
   const promptSuggestions = mode === "change"
     ? [
-        "Compare bi-temporal land-use changes",
-        "Detect forest canopy loss between dates",
-        "Identify new urban expansion zones"
-      ]
+      "Compare bi-temporal land-use changes",
+      "Detect forest canopy loss between dates",
+      "Identify new urban expansion zones"
+    ]
     : mode === "optical-sar"
-    ? [
+      ? [
         "Analyze optical and SAR flooding evidence",
         "Cloud-penetrating structural texture map",
         "Radar backscatter VV/VH anomaly"
       ]
-    : [
+      : [
         "What is visible in this satellite scene?",
         "Highlight the urban rooftop structures",
         "Is there a water body present?",
@@ -253,6 +253,50 @@ export default function WorkspaceGrid({ mode = "single" }: WorkspaceGridProps) {
               </div>
             )}
 
+            {/* Autonomous Agentic Strategy & Routing Card */}
+            <div className="bg-gradient-to-r from-purple-900/10 via-indigo-900/10 to-slate-900/10 dark:from-purple-950/40 dark:via-indigo-950/40 dark:to-slate-950/40 border border-purple-200 dark:border-purple-800/60 p-4 rounded-xl space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-lg bg-purple-600 text-white flex items-center justify-center text-xs font-bold shadow-xs">
+                    🤖
+                  </div>
+                  <h4 className="font-bold text-slate-900 dark:text-slate-100 text-xs tracking-wide uppercase">
+                    Autonomous Agent Strategy & Plan
+                  </h4>
+                </div>
+                <span className="bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border border-purple-300 dark:border-purple-800">
+                  LangGraph 5-Node DAG
+                </span>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2 pt-1 text-xs">
+                <div className="bg-white/80 dark:bg-slate-900/80 p-2 rounded-lg border border-slate-200/80 dark:border-slate-800">
+                  <span className="text-[10px] font-semibold text-slate-500 uppercase block">Input Modality</span>
+                  <span className="font-bold text-slate-800 dark:text-slate-200">
+                    {resultData?.metadata?.image_type === "bi-temporal" ? "Bi-Temporal Pair" : resultData?.metadata?.image_type === "optical_sar" ? "Optical + SAR Pair" : "Single Satellite Patch"}
+                  </span>
+                </div>
+                <div className="bg-white/80 dark:bg-slate-900/80 p-2 rounded-lg border border-slate-200/80 dark:border-slate-800">
+                  <span className="text-[10px] font-semibold text-slate-500 uppercase block">Query Intent</span>
+                  <span className="font-bold text-purple-700 dark:text-purple-300 capitalize">
+                    {resultData?.intent || "Visual VQA"}
+                  </span>
+                </div>
+                <div className="bg-white/80 dark:bg-slate-900/80 p-2 rounded-lg border border-slate-200/80 dark:border-slate-800">
+                  <span className="text-[10px] font-semibold text-slate-500 uppercase block">Specialist Assigned</span>
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400 capitalize">
+                    {resultData?.task === "change_analysis" ? "ChangeFormer + LLaVA" : resultData?.task === "optical_sar" ? "CROMA Cross-Modal" : "LLaVA-1.5-7B VQA"}
+                  </span>
+                </div>
+              </div>
+
+              {resultData?.metadata?.intent_reasoning && (
+                <p className="text-[11px] text-slate-600 dark:text-slate-400 italic bg-white/40 dark:bg-slate-900/40 p-2 rounded-md border border-slate-200/50 dark:border-slate-800/50">
+                  &quot;{resultData.metadata.intent_reasoning}&quot;
+                </p>
+              )}
+            </div>
+
             {/* Model Answer */}
             <div className="space-y-2 bg-slate-50 dark:bg-slate-950/70 p-4 rounded-xl border border-slate-200/80 dark:border-slate-800/80">
               <h3 className="flex items-center font-bold text-slate-900 dark:text-slate-100 text-sm">
@@ -291,7 +335,7 @@ export default function WorkspaceGrid({ mode = "single" }: WorkspaceGridProps) {
               </div>
             </div>
 
-                {/* Observable Execution Trace Stepper Pipeline */}
+            {/* Observable Execution Trace Stepper Pipeline */}
             {resultData?.execution_trace && resultData.execution_trace.length > 0 && (
               <div className="space-y-3 border-t border-slate-200 dark:border-slate-800 pt-4">
                 <div className="flex items-center justify-between">
@@ -299,21 +343,21 @@ export default function WorkspaceGrid({ mode = "single" }: WorkspaceGridProps) {
                     <Activity size={14} className="text-purple-600 dark:text-purple-400" />
                     Observable Agentic Execution Trace
                   </h4>
-                  <span className="bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
-                    {resultData.execution_trace.length} Pipeline Steps
+                  <span className="bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
+                    {resultData.execution_trace.length} LangGraph Steps
                   </span>
                 </div>
 
                 <div className="space-y-2">
                   {resultData.execution_trace.map((step, idx) => {
-                    const cleanStep = step.replace(/^\[OK\]\s*/, "");
+                    const cleanStep = step.replace(/^\[(LangGraph|Legacy|OK)\]\s*/, "");
                     return (
                       <div
                         key={idx}
-                        className="flex items-start gap-3 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200/70 dark:border-slate-800/70 text-xs font-medium text-slate-800 dark:text-slate-200 transition-colors"
+                        className="flex items-start gap-3 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200/70 dark:border-slate-800/70 text-xs font-medium text-slate-800 dark:text-slate-200 transition-colors hover:border-purple-300 dark:hover:border-purple-800"
                       >
-                        <div className="flex items-center justify-center w-5 h-5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold text-[11px] shrink-0 mt-0.5 shadow-2xs">
-                          ✓
+                        <div className="flex items-center justify-center w-5 h-5 rounded-full bg-purple-500/15 text-purple-600 dark:text-purple-400 font-bold text-[10px] shrink-0 mt-0.5 shadow-2xs">
+                          {idx + 1}
                         </div>
                         <div className="flex-1 leading-relaxed">
                           {cleanStep}

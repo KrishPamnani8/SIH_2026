@@ -24,6 +24,8 @@ def _get_croma_endpoint() -> str:
     """Resolve the CROMA/optical-SAR inference endpoint on the Colab GPU server."""
     try:
         from config import config
+        if getattr(config, "COLAB_SAR_OPTICAL_ENDPOINT", ""):
+            return config.COLAB_SAR_OPTICAL_ENDPOINT
         base = config.COLAB_GPU_ENDPOINT or config.CLOUD_GPU_ENDPOINT or ""
         if base:
             if base.endswith("/predict"):
