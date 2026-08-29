@@ -8,8 +8,9 @@ Connects to Colab GPU Inference Server when available.
 import requests
 import io
 import base64
-from backend import config
-from backend.system_prompt import VQA_SYSTEM_PROMPT
+from config import config
+from system_prompt import VQA_SYSTEM_PROMPT
+from tools.utils import extract_evidence_tags, estimate_confidence
 
 def execute_vqa(query: str, images_metadata: list) -> dict:
     """
@@ -18,8 +19,15 @@ def execute_vqa(query: str, images_metadata: list) -> dict:
     """
     query_lower = query.lower().strip()
     
-    # Inject scientific persona instructions
-    enhanced_query = f"{VQA_SYSTEM_PROMPT}\n\nUser Question: {query}"
+    # Simple, direct instruction — no formatting requirements that confuse the model
+    enhanced_query = (
+        "You are a scientific satellite image analysis expert. "
+        "Provide a detailed, multi-paragraph analysis of this satellite image. "
+        "Include observations about land cover, structures, vegetation, water bodies, terrain, "
+        "spatial patterns, and any notable features. Write at least 5 sentences. "
+        "Be specific about colors, textures, shapes, and spatial relationships you observe.\n\n"
+        f"Question: {query}"
+    )
     
     # Check if input includes a multi-spectral .npy patch
     is_multispectral = False
@@ -55,10 +63,16 @@ def execute_vqa(query: str, images_metadata: list) -> dict:
             res = requests.post(colab_endpoint, json=payload, headers=headers, timeout=35)
             if res.status_code == 200:
                 gpu_data = res.json()
+                answer_text = gpu_data.get("answer", "Colab GPU inference completed.")
+                
+                # Extract short evidence tags from answer using keyword detection
+                evidence = extract_evidence_tags(answer_text, format_info)
+                confidence = estimate_confidence(answer_text)
+                    
                 return {
-                    "answer": gpu_data.get("answer", "Colab GPU inference completed."),
-                    "confidence": gpu_data.get("confidence", 0.95),
-                    "evidence": gpu_data.get("evidence", ["Real Qwen2-VL-2B GPU Vision-Language Inference", f"Input: {format_info}"]),
+                    "answer": answer_text,
+                    "confidence": confidence,
+                    "evidence": evidence,
                     "model": gpu_data.get("model", "Qwen2-VL-2B (Colab GPU Active)"),
                     "tool_name": "RS-VQA Colab GPU Engine",
                     "multispectral": is_multispectral

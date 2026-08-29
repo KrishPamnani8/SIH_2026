@@ -14,6 +14,7 @@ import base64
 import io
 import requests
 from preprocessing import generate_optical_sar_fusion_b64
+from tools.utils import extract_evidence_tags, estimate_confidence
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -47,9 +48,18 @@ def _call_croma_endpoint(optical_img, sar_img, query: str) -> dict | None:
     endpoint = _get_croma_endpoint()
     if not endpoint:
         return None
+        
+    enhanced_query = (
+        "You are a scientific satellite image analysis expert. "
+        "Provide a detailed, multi-paragraph cross-modal analysis of this fused Optical and SAR imagery. "
+        "Explain what the optical signature reveals (e.g., land cover, vegetation) and what the SAR signature reveals "
+        "(e.g., structural density, moisture, cloud-penetrating textures). Write at least 4 sentences.\n\n"
+        f"Question: {query}"
+    )
+        
     try:
         payload = {
-            "query": query,
+            "query": enhanced_query,
             "b64_optical": _pil_to_b64(optical_img),
             "b64_sar": _pil_to_b64(sar_img),
         }
@@ -194,14 +204,16 @@ def execute_optical_sar(query: str, images_metadata: list) -> dict:
                 )
             else:
                 visual_evidence.append(generate_optical_sar_fusion_b64(optical_img, sar_img))
+                
+            # Extract dynamic tags and confidence
+            answer_text = colab_result.get("answer", f"CROMA fusion complete: '{opt_name}' + '{sar_name}'.")
+            evidence = extract_evidence_tags(answer_text, "Cross-Modal Optical+SAR Fusion")
+            confidence = estimate_confidence(answer_text)
 
             return {
-                "answer": colab_result.get("answer", f"CROMA fusion complete: '{opt_name}' + '{sar_name}'."),
-                "confidence": colab_result.get("confidence", 0.94),
-                "evidence": colab_result.get("evidence", [
-                    "CROMA Cross-Modal Transformer GPU Inference (Real Model)",
-                    f"Optical: {opt_name} | SAR: {sar_name}",
-                ]),
+                "answer": answer_text,
+                "confidence": confidence,
+                "evidence": evidence,
                 "visual_evidence": visual_evidence,
                 "model": "CROMA Cross-Modal Transformer (Colab GPU)",
                 "tool_name": "Optical + SAR Cross-Modal Tool",

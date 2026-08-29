@@ -13,6 +13,7 @@ import base64
 import io
 import requests
 from preprocessing import generate_change_mask_b64
+from tools.utils import extract_evidence_tags, estimate_confidence
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Colab GPU ChangeTransformer path
@@ -54,9 +55,17 @@ def _call_change_transformer(img1, img2, query: str) -> dict | None:
     if not endpoint:
         return None
 
+    enhanced_query = (
+        "You are a scientific satellite image analysis expert. "
+        "Provide a detailed, multi-paragraph analysis of the structural and environmental changes "
+        "between these two temporal satellite observations. Describe exactly what was lost, what was gained, "
+        "and any spatial patterns in the change mask. Write at least 4 sentences.\n\n"
+        f"Question: {query}"
+    )
+
     try:
         payload = {
-            "query": query,
+            "query": enhanced_query,
             "b64_image_t1": _pil_to_b64(img1),
             "b64_image_t2": _pil_to_b64(img2),
         }
@@ -167,13 +176,15 @@ def execute_change_analysis(query: str, images_metadata: list) -> dict:
                 # Generate local change map as visual overlay anyway
                 visual_evidence.append(generate_change_mask_b64(img1, img2))
 
+            # Extract dynamic tags and confidence
+            answer_text = colab_result.get("answer", f"ChangeTransformer analysis complete: '{fn1}' vs '{fn2}'.")
+            evidence = extract_evidence_tags(answer_text, "Bi-Temporal Optical Image Pair")
+            confidence = estimate_confidence(answer_text)
+
             return {
-                "answer": colab_result.get("answer", f"ChangeTransformer analysis complete: '{fn1}' vs '{fn2}'."),
-                "confidence": colab_result.get("confidence", 0.93),
-                "evidence": colab_result.get("evidence", [
-                    "BIT/ChangeFormer GPU Inference (Real Model)",
-                    f"Bi-temporal pair: {fn1} (T1) vs {fn2} (T2)",
-                ]),
+                "answer": answer_text,
+                "confidence": confidence,
+                "evidence": evidence,
                 "visual_evidence": visual_evidence,
                 "model": colab_result.get("model", "BIT/ChangeFormer Bi-Temporal Transformer (Colab GPU)"),
                 "tool_name": "Bi-Temporal Change Detection Tool",
