@@ -305,7 +305,7 @@ _PLAN_TABLE = {
     # Single image intents
     ("single", "describe"): (
         "captioning",
-        "RSICD-Captioner-V2 / LLaVA-1.5-7B Scene Description"
+        "RSICD-Captioner-V2 / Qwen2-VL-2B Scene Description"
     ),
     ("single", "ground"): (
         "grounding",
@@ -317,7 +317,7 @@ _PLAN_TABLE = {
     ),
     ("single", "vqa"): (
         "vqa",
-        "LLaVA-1.5-7B VQA (Colab GPU) | RS-VQA keyword fallback"
+        "Qwen2-VL-2B VQA (Colab GPU) | RS-VQA keyword fallback"
     ),
     ("single", "what_changed"): (
         "change_analysis",
@@ -355,7 +355,7 @@ def plan_task_node(state: AgentState) -> AgentState:
     intent = state.get("intent", "vqa")
 
     key = (image_type, intent)
-    task, model_plan = _PLAN_TABLE.get(key, ("vqa", "LLaVA-1.5-7B VQA (default fallback)"))
+    task, model_plan = _PLAN_TABLE.get(key, ("vqa", "Qwen2-VL-2B VQA (default fallback)"))
 
     trace.append(f"[LangGraph] Node 3 - Decision: ({image_type}, {intent}) -> task='{task}'")
     trace.append(f"[LangGraph] Node 3 - Model Plan: {model_plan}")
@@ -385,7 +385,7 @@ def dispatch_tool_node(state: AgentState) -> AgentState:
     images_metadata = state.get("images_metadata", [])
 
     _TOOL_LABELS = {
-        "vqa": "VQA (Visual Question Answering) - LLaVA-1.5-7B",
+        "vqa": "VQA (Visual Question Answering) - Qwen2-VL-2B",
         "captioning": "Scene Captioning - RSICD-Captioner-V2",
         "grounding": "Text-Guided Visual Grounding - RS-GeoChat",
         "change_analysis": "Bi-Temporal Change Analysis - BIT/ChangeFormer Transformer",

@@ -32,9 +32,9 @@ class Config:
     # Optional Cloud GPU / Colab GPU / Hugging Face API keys & endpoints for heavy model inference
     HUGGINGFACE_API_TOKEN: str = os.getenv("HUGGINGFACE_API_TOKEN", "")
     CLOUD_GPU_ENDPOINT: str = os.getenv("CLOUD_GPU_ENDPOINT", "")
-    COLAB_GPU_ENDPOINT: str = os.getenv("COLAB_GPU_ENDPOINT", "https://ezrkk-34-187-170-184.run.pinggy-free.link/predict")
-    CHANGE_ANALYSIS_ENDPOINT: str = os.getenv("CHANGE_ANALYSIS_ENDPOINT", "https://ezrkk-34-187-170-184.run.pinggy-free.link/change")
-    COLAB_SAR_OPTICAL_ENDPOINT: str = os.getenv("COLAB_SAR_OPTICAL_ENDPOINT", "https://ezrkk-34-187-170-184.run.pinggy-free.link/croma")
+    COLAB_GPU_ENDPOINT: str = os.getenv("COLAB_GPU_ENDPOINT", "https://mlykf-34-125-110-28.run.pinggy-free.link/predict")
+    CHANGE_ANALYSIS_ENDPOINT: str = os.getenv("CHANGE_ANALYSIS_ENDPOINT", "https://mlykf-34-125-110-28.run.pinggy-free.link/change")
+    COLAB_SAR_OPTICAL_ENDPOINT: str = os.getenv("COLAB_SAR_OPTICAL_ENDPOINT", "https://mlykf-34-125-110-28.run.pinggy-free.link/croma")
 
     # LLM API Keys for LangGraph planner nodes
     # Primary: Google Gemini (recommended for SIH / GCP stack)
