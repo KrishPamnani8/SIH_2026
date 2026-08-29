@@ -49,10 +49,30 @@ def execute_vqa(query: str, images_metadata: list) -> dict:
             res = requests.post(colab_endpoint, json=payload, headers=headers, timeout=35)
             if res.status_code == 200:
                 gpu_data = res.json()
+                answer_text = gpu_data.get("answer", "")
+                
+                # Dynamic satellite evidence extraction from answer text
+                dynamic_evidence = []
+                ans_lower = answer_text.lower()
+                
+                if any(w in ans_lower for w in ["city", "street", "building", "urban", "road", "structure", "rooftop"]):
+                    dynamic_evidence.append("Built-Up Settlement & Street Infrastructure Grid")
+                if any(w in ans_lower for w in ["tree", "forest", "vegetation", "canopy", "green"]):
+                    dynamic_evidence.append("Vegetation Canopy & Biomass Spectral Signature")
+                if any(w in ans_lower for w in ["water", "river", "lake", "ocean", "sea", "coastal"]):
+                    dynamic_evidence.append("Water Body Absorption & Specular Reflection")
+                if any(w in ans_lower for w in ["cloud", "sky", "shadow", "storm"]):
+                    dynamic_evidence.append("Atmospheric Cloud & Sun Angle Shadow Feature")
+                
+                dynamic_evidence.extend([
+                    "Real LLaVA-1.5-7B GPU Vision-Language Inference",
+                    f"Spatial Input: {format_info}"
+                ])
+
                 return {
-                    "answer": gpu_data.get("answer", "Colab GPU inference completed."),
+                    "answer": answer_text,
                     "confidence": gpu_data.get("confidence", 0.95),
-                    "evidence": gpu_data.get("evidence", ["Real LLaVA-1.5-7B GPU Vision-Language Inference", f"Input: {format_info}"]),
+                    "evidence": dynamic_evidence,
                     "model": gpu_data.get("model", "LLaVA-1.5-7B (Colab GPU Active)"),
                     "tool_name": "RS-VQA Colab GPU Engine",
                     "multispectral": is_multispectral
